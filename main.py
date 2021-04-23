@@ -284,34 +284,10 @@ if __name__ == '__main__':
     start_x,start_y = 0,4
 
     print("What do you want to do?:")
-    print("\t0) Compute single utility from a random walk.")
-    print("\t1) Compute expected utility of a given policy for a given start state (with a montecarlo method).")
-    print("\t2) Compute expected utility of a given policy for all states (with an iteration algorithm).")
-    print("\t3) Compute best policy.")
 
     option=input()
 
-    if option=="0":
-
-        print(compute_utility(start_x, start_y, policy=policy_random_example, paint=True))
-
-    elif option=="1":
-
-        utilities = []
-        number_episodes = 100000
-        ten_per_cent = number_episodes/10
-
-        for i in range(number_episodes):
-
-            if i%ten_per_cent==0: print("|")
-
-            utilities.append(compute_utility(start_x,start_y,policy=policy_random_example,paint=False))
-
-        estimated_expected_utility = sum(utilities)/ number_episodes
-        print(estimated_expected_utility)   # FROM policy_random_example STARTING FROM start_x,start_y!
-                                            # Maybe a good idea to compute it from other start states?
-
-    elif option=="2":
+    if option=="2":
 
         V=[0.0]*NUM_STATES
         Vt_before = [0.0]*NUM_STATES
