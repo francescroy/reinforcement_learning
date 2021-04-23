@@ -152,8 +152,15 @@ class State:
             neighbour_E.chance_nodes[1].rewards[self.x + self.y*Y_SIZE] = reward
             neighbour_E.chance_nodes[2].rewards[self.x + self.y*Y_SIZE] = reward
 
-
-        return
+        if self.end==False:
+            if neighbour_N is None:
+                self.chance_nodes[0].rewards[self.x + self.y*Y_SIZE] = reward
+            if neighbour_S is None:
+                self.chance_nodes[1].rewards[self.x + self.y*Y_SIZE] = reward
+            if neighbour_W is None:
+                self.chance_nodes[2].rewards[self.x + self.y*Y_SIZE] = reward
+            if neighbour_E is None:
+                self.chance_nodes[3].rewards[self.x + self.y*Y_SIZE] = reward
 
     def get_chance_node(self, action):
         if self.end ==True:
@@ -262,10 +269,12 @@ if __name__ == '__main__':
 
     for x in range(X_SIZE):
         for y in range(Y_SIZE):
+            
             if (x==x_end and y == y_end) or (x==x_end2 and y == y_end2):
                 states.append(State(x,y,True))
             else:
                 states.append(State(x, y, False))
+
 
 
     find_state(x_end,y_end,states).set_reward(1,states)
@@ -280,8 +289,6 @@ if __name__ == '__main__':
     #print(find_state(from_x, from_y, states).chance_nodes[direction].rewards[to_x + to_y * Y_SIZE])
 
     policy_random_example = get_random_policy(states) # is simply an list of strings...
-
-    start_x,start_y = 0,4
 
     print("What do you want to do?:")
 
