@@ -11,46 +11,44 @@ Y_SIZE =5
 NUM_STATES = X_SIZE * Y_SIZE
 NEGATIVE_REWARD_STEP = -0.05
 GAMMA = 0.90
+PREMI_X, PREMI_Y = 4,4
 
 class ChanceNode:
-    def __init__(self, x,y,action):
+    def __init__(self, x,y,action,reward):
         self.action = action
         self.x = x
         self.y = y
         self.trans_probabilities = np.zeros((NUM_STATES,), dtype=float)
-        self.rewards = [None] * NUM_STATES
+        self.reward = reward #GEOMETRICAL DISTANCE... LESS DISTANCE HIGHER REWARD
 
         # vaig a especificar 3 trans_probabilities que no seran 0...
         if action=='N':
 
-            self.set_trans_probability_and_reward(x, y + 1, 0.8,NEGATIVE_REWARD_STEP)
-            self.set_trans_probability_and_reward(x + 1, y, 0.1,NEGATIVE_REWARD_STEP)
-            self.set_trans_probability_and_reward(x - 1, y, 0.1,NEGATIVE_REWARD_STEP)
+            self.set_trans_probability_and_reward(x, y + 1, 0.8)
+            self.set_trans_probability_and_reward(x + 1, y, 0.1)
+            self.set_trans_probability_and_reward(x - 1, y, 0.1)
         elif action=='S':
 
-            self.set_trans_probability_and_reward(x, y - 1, 0.8,NEGATIVE_REWARD_STEP)
-            self.set_trans_probability_and_reward(x + 1, y, 0.1,NEGATIVE_REWARD_STEP)
-            self.set_trans_probability_and_reward(x - 1, y, 0.1,NEGATIVE_REWARD_STEP)
+            self.set_trans_probability_and_reward(x, y - 1, 0.8)
+            self.set_trans_probability_and_reward(x + 1, y, 0.1)
+            self.set_trans_probability_and_reward(x - 1, y, 0.1)
         elif action=='W':
 
-            self.set_trans_probability_and_reward(x - 1, y, 0.8,NEGATIVE_REWARD_STEP)
-            self.set_trans_probability_and_reward(x, y + 1, 0.1,NEGATIVE_REWARD_STEP)
-            self.set_trans_probability_and_reward(x, y - 1, 0.1,NEGATIVE_REWARD_STEP)
+            self.set_trans_probability_and_reward(x - 1, y, 0.8)
+            self.set_trans_probability_and_reward(x, y + 1, 0.1)
+            self.set_trans_probability_and_reward(x, y - 1, 0.1)
         else:
 
-            self.set_trans_probability_and_reward(x + 1, y, 0.8,NEGATIVE_REWARD_STEP)
-            self.set_trans_probability_and_reward(x, y + 1, 0.1,NEGATIVE_REWARD_STEP)
-            self.set_trans_probability_and_reward(x, y - 1, 0.1,NEGATIVE_REWARD_STEP)
+            self.set_trans_probability_and_reward(x + 1, y, 0.8)
+            self.set_trans_probability_and_reward(x, y + 1, 0.1)
+            self.set_trans_probability_and_reward(x, y - 1, 0.1)
 
-    def set_trans_probability_and_reward(self,x,y,prob,reward):
+    def set_trans_probability_and_reward(self,x,y,prob):
 
-        #imaginant que no hi ha cas raro de moment...
         if(0 <= x and x <= X_SIZE-1 and 0 <= y and y <= Y_SIZE-1):
             self.trans_probabilities[x + y*Y_SIZE] = prob
-            self.rewards[x + y * Y_SIZE] = reward
         else:
             self.trans_probabilities[self.x + self.y*Y_SIZE] += prob
-            self.rewards[self.x + self.y*Y_SIZE] = reward
 
     def possible_next_sates(self):
 
@@ -59,9 +57,9 @@ class ChanceNode:
         for x in range(X_SIZE):
             for y in range(Y_SIZE):
                 prob_to_that_state = self.trans_probabilities[x + y * Y_SIZE]
-                reward_to_that_state = self.rewards[x + y * Y_SIZE]
+
                 if prob_to_that_state != 0:
-                    possible_sates.append([find_state(x, y, states), prob_to_that_state, reward_to_that_state])
+                    possible_sates.append([find_state(x, y, states), prob_to_that_state])
                     # print (str(x) + " - " +str(y) + " with prob: "+ str(prob_to_that_state))
 
         return possible_sates
@@ -78,18 +76,18 @@ class ChanceNode:
 
         if random_int < possible_sates[0][1]*10:
             definitive_next_state=possible_sates[0][0]
-            definitive_reward=possible_sates[0][2]
+
 
         elif random_int < (possible_sates[0][1]+possible_sates[1][1])*10:
             definitive_next_state=possible_sates[1][0]
-            definitive_reward=possible_sates[1][2]
+
 
         else:
             definitive_next_state=possible_sates[2][0]
-            definitive_reward=possible_sates[2][2]
 
 
-        return definitive_next_state, definitive_reward
+
+        return definitive_next_state
 
 
 class State:
@@ -100,8 +98,9 @@ class State:
         self.chance_nodes = None
 
         if end==False:
-            self.chance_nodes = [ChanceNode(x,y,'N'),ChanceNode(x,y,'S'),ChanceNode(x,y,'W'),ChanceNode(x,y,'E')]
+            self.chance_nodes = [ChanceNode(x,y,'N',compute_reward(x,y,'N')),ChanceNode(x,y,'S',compute_reward(x,y,'S')),ChanceNode(x,y,'W',compute_reward(x,y,'W')),ChanceNode(x,y,'E',compute_reward(x,y,'E'))]
 
+    """
     def paint(self):
 
         for y in range(Y_SIZE-1, -1, -1):
@@ -114,11 +113,12 @@ class State:
 
             print()
         print()
+        """
 
     def next_state(self, action, states):
 
         if self.end==True:
-            return self, NEGATIVE_REWARD_STEP
+            return self
         if action=='N':
             return self.chance_nodes[0].next_state(states)
         if action=='S':
@@ -127,40 +127,6 @@ class State:
             return self.chance_nodes[2].next_state(states)
         if action=='E':
             return self.chance_nodes[3].next_state(states)
-
-    def set_reward(self, reward, states):
-
-        neighbour_N = find_state(self.x,self.y+1,states)
-        neighbour_S = find_state(self.x,self.y-1,states)
-        neighbour_W = find_state(self.x-1,self.y,states)
-        neighbour_E = find_state(self.x+1,self.y,states)
-
-        if neighbour_N is not None and neighbour_N.end==False:
-            neighbour_N.chance_nodes[1].rewards[self.x + self.y*Y_SIZE] = reward
-            neighbour_N.chance_nodes[2].rewards[self.x + self.y*Y_SIZE] = reward
-            neighbour_N.chance_nodes[3].rewards[self.x + self.y*Y_SIZE] = reward
-        if neighbour_S is not None and neighbour_S.end==False:
-            neighbour_S.chance_nodes[0].rewards[self.x + self.y*Y_SIZE] = reward
-            neighbour_S.chance_nodes[2].rewards[self.x + self.y*Y_SIZE] = reward
-            neighbour_S.chance_nodes[3].rewards[self.x + self.y*Y_SIZE] = reward
-        if neighbour_W is not None and neighbour_W.end==False:
-            neighbour_W.chance_nodes[0].rewards[self.x + self.y*Y_SIZE] = reward
-            neighbour_W.chance_nodes[1].rewards[self.x + self.y*Y_SIZE] = reward
-            neighbour_W.chance_nodes[3].rewards[self.x + self.y*Y_SIZE] = reward
-        if neighbour_E is not None and neighbour_E.end==False:
-            neighbour_E.chance_nodes[0].rewards[self.x + self.y*Y_SIZE] = reward
-            neighbour_E.chance_nodes[1].rewards[self.x + self.y*Y_SIZE] = reward
-            neighbour_E.chance_nodes[2].rewards[self.x + self.y*Y_SIZE] = reward
-
-        if self.end==False:
-            if neighbour_N is None:
-                self.chance_nodes[0].rewards[self.x + self.y*Y_SIZE] = reward
-            if neighbour_S is None:
-                self.chance_nodes[1].rewards[self.x + self.y*Y_SIZE] = reward
-            if neighbour_W is None:
-                self.chance_nodes[2].rewards[self.x + self.y*Y_SIZE] = reward
-            if neighbour_E is None:
-                self.chance_nodes[3].rewards[self.x + self.y*Y_SIZE] = reward
 
     def get_chance_node(self, action):
         if self.end ==True:
@@ -175,27 +141,7 @@ class State:
             return self.chance_nodes[3]
 
 
-def compute_utility(start_x,start_y,policy, paint):
 
-    utility =0.0
-
-    current_state= find_state(start_x, start_y, states)
-    if paint==True:
-        current_state.paint()
-
-    number_of_steps=0
-
-    while(current_state.end==False):
-        next_action = policy[current_state.x + current_state.y * Y_SIZE]
-        #print(next_action)
-        current_state,uti = current_state.next_state(next_action,states)
-        if paint == True:
-            current_state.paint()
-
-        utility = utility + uti*pow(GAMMA, number_of_steps)
-        number_of_steps = number_of_steps+1
-
-    return utility
 
 def find_state(x,y,states):
 
@@ -207,16 +153,32 @@ def find_state(x,y,states):
 
     return result
 
-def sumatori(states,x,y,action,Vt_before):
+def compute_reward(x,y,action):
 
-    state =find_state(x,y,states)
+    desired_x =x
+    desired_y =y
+
+    if   action=='N':
+        desired_y = desired_y + 1
+    elif action=='S':
+        desired_y = desired_y - 1
+    elif action == 'W':
+        desired_x = desired_x - 1
+    elif action == 'E':
+        desired_x = desired_x + 1
+
+    if (0 <= desired_x and desired_x <= X_SIZE - 1 and 0 <= desired_y and desired_y <= Y_SIZE - 1):
+        return -pow(pow(desired_x-PREMI_X,2) + pow(desired_y-PREMI_Y,2),0.5)
+    else:
+        return -pow(pow(x-PREMI_X,2) + pow(y-PREMI_Y,2),0.5)
+
+def sumatori(state,action,Vt_before):
 
     possible_states = state.get_chance_node(action).possible_next_sates()
     sumatori=0.0
 
     for possible_state in possible_states:
-        sumatori= sumatori + possible_state[1]*(possible_state[2] + GAMMA*Vt_before[possible_state[0].x + possible_state[0].y * Y_SIZE])
-
+        sumatori= sumatori + possible_state[1]*Vt_before[possible_state[0].x + possible_state[0].y * Y_SIZE]
 
     return sumatori
 
@@ -260,33 +222,22 @@ def get_random_policy(states):
     return policy
 
 
-if __name__ == '__main__':
 
-    x_end, y_end = 0,0
-    x_end2, y_end2 = 4, 4
+
+
+
+if __name__ == '__main__':
 
     states = []
 
     for x in range(X_SIZE):
         for y in range(Y_SIZE):
-            
-            if (x==x_end and y == y_end) or (x==x_end2 and y == y_end2):
-                states.append(State(x,y,True))
-            else:
-                states.append(State(x, y, False))
+            states.append(State(x, y, False))
+            #if (x==PREMI_X and y == PREMI_Y):
+            #    states.append(State(x,y,True))
+            #else:
+            #    states.append(State(x, y, False))
 
-
-
-    find_state(x_end,y_end,states).set_reward(1,states)
-    find_state(x_end2, y_end2, states).set_reward(-1, states)
-
-
-    # Example to see transition probabilities:
-    #from_x, from_y = 1, 0
-    #to_x, to_y = 1, 1
-    #direction = 0  # 0(N), 1(S), 2(W), 3(E)
-    #print(find_state(from_x, from_y, states).chance_nodes[direction].trans_probabilities[to_x + to_y * Y_SIZE])
-    #print(find_state(from_x, from_y, states).chance_nodes[direction].rewards[to_x + to_y * Y_SIZE])
 
     policy_random_example = get_random_policy(states) # is simply an list of strings...
 
@@ -302,15 +253,26 @@ if __name__ == '__main__':
         for t in range(10000):
             for i in range(X_SIZE):
                 for j in range(Y_SIZE):
-                    if find_state(i,j,states).end==False:
-                        V[i + j*Y_SIZE]= sumatori(states,i,j,policy_random_example[i + j * Y_SIZE],Vt_before)
+
+                    s = find_state(i,j,states)
+                    action = policy_random_example[i + j * Y_SIZE]
+
+                    if s.end==False:
+                        V[i + j*Y_SIZE]= s.get_chance_node(action=action).reward + GAMMA*sumatori(s,action,Vt_before)
                         Vt_before[i + j * Y_SIZE]= V[i + j*Y_SIZE]
+
+
+
+
+
+
 
         for i in range(X_SIZE):
             for j in range(Y_SIZE):
                 print(str(i) + " " + str(j) +": "+ str(V[i+j*Y_SIZE]))
-
+    """
     elif option=="3":
+        
 
         V_opt = [0.0]*NUM_STATES
         Vt_opt_before = [0.0]*NUM_STATES
@@ -344,6 +306,10 @@ if __name__ == '__main__':
                     print(" ",end = " ")
             print()
         print()
+    """
+
+
+
 
 
 
@@ -353,3 +319,8 @@ if __name__ == '__main__':
     # I després apendre probabilitats (RL) Nou repo???
 
 
+    # 04 14 24 34 44
+    # 03 13 ++ 33 43
+    # 02 12 22 32 42
+    # 01 11 21 31 41
+    # 00 10 20 30 40
