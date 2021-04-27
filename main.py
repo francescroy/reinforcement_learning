@@ -9,9 +9,9 @@ from random import *
 X_SIZE =5
 Y_SIZE =5
 NUM_STATES = X_SIZE * Y_SIZE
-NEGATIVE_REWARD_STEP = -0.05
 GAMMA = 0.90
-PREMI_X, PREMI_Y = 4,4
+PREMI_X, PREMI_Y = 2,2
+FINAL_STATE = False
 
 class ChanceNode:
     def __init__(self, x,y,action,reward):
@@ -19,31 +19,31 @@ class ChanceNode:
         self.x = x
         self.y = y
         self.trans_probabilities = np.zeros((NUM_STATES,), dtype=float)
-        self.reward = reward #GEOMETRICAL DISTANCE... LESS DISTANCE HIGHER REWARD
+        self.reward = reward
 
         # vaig a especificar 3 trans_probabilities que no seran 0...
         if action=='N':
 
-            self.set_trans_probability_and_reward(x, y + 1, 0.8)
-            self.set_trans_probability_and_reward(x + 1, y, 0.1)
-            self.set_trans_probability_and_reward(x - 1, y, 0.1)
+            self.set_trans_probability(x, y + 1, 0.8)
+            self.set_trans_probability(x + 1, y, 0.1)
+            self.set_trans_probability(x - 1, y, 0.1)
         elif action=='S':
 
-            self.set_trans_probability_and_reward(x, y - 1, 0.8)
-            self.set_trans_probability_and_reward(x + 1, y, 0.1)
-            self.set_trans_probability_and_reward(x - 1, y, 0.1)
+            self.set_trans_probability(x, y - 1, 0.8)
+            self.set_trans_probability(x + 1, y, 0.1)
+            self.set_trans_probability(x - 1, y, 0.1)
         elif action=='W':
 
-            self.set_trans_probability_and_reward(x - 1, y, 0.8)
-            self.set_trans_probability_and_reward(x, y + 1, 0.1)
-            self.set_trans_probability_and_reward(x, y - 1, 0.1)
+            self.set_trans_probability(x - 1, y, 0.8)
+            self.set_trans_probability(x, y + 1, 0.1)
+            self.set_trans_probability(x, y - 1, 0.1)
         else:
 
-            self.set_trans_probability_and_reward(x + 1, y, 0.8)
-            self.set_trans_probability_and_reward(x, y + 1, 0.1)
-            self.set_trans_probability_and_reward(x, y - 1, 0.1)
+            self.set_trans_probability(x + 1, y, 0.8)
+            self.set_trans_probability(x, y + 1, 0.1)
+            self.set_trans_probability(x, y - 1, 0.1)
 
-    def set_trans_probability_and_reward(self,x,y,prob):
+    def set_trans_probability(self,x,y,prob):
 
         if(0 <= x and x <= X_SIZE-1 and 0 <= y and y <= Y_SIZE-1):
             self.trans_probabilities[x + y*Y_SIZE] = prob
@@ -88,7 +88,6 @@ class ChanceNode:
 
 
         return definitive_next_state
-
 
 class State:
     def __init__(self, x, y, end):
@@ -141,8 +140,6 @@ class State:
             return self.chance_nodes[3]
 
 
-
-
 def find_state(x,y,states):
 
     result = None
@@ -182,18 +179,6 @@ def sumatori(state,action,Vt_before):
 
     return sumatori
 
-def get_max_and_best_action(sumatoris):
-
-    best_so_far = sumatoris[0]
-
-    if(sumatoris[1][0]>best_so_far[0]):
-        best_so_far=sumatoris[1]
-    if(sumatoris[2][0]>best_so_far[0]):
-        best_so_far=sumatoris[2]
-    if(sumatoris[3][0]>best_so_far[0]):
-        best_so_far=sumatoris[3]
-    return best_so_far
-
 def get_random_policy(states):
 
     policy= []
@@ -203,7 +188,7 @@ def get_random_policy(states):
 
             if(find_state(x,y,states).end==False):
 
-                policy.append("S")
+                policy.append("N")
                 """
                 random_int = randint(0, 3)
                 if random_int==0:
@@ -221,9 +206,17 @@ def get_random_policy(states):
 
     return policy
 
+def get_max_and_best_action(q_opts):
 
+    best_so_far = q_opts[0]
 
-
+    if(q_opts[1][0]>best_so_far[0]):
+        best_so_far=q_opts[1]
+    if(q_opts[2][0]>best_so_far[0]):
+        best_so_far=q_opts[2]
+    if(q_opts[3][0]>best_so_far[0]):
+        best_so_far=q_opts[3]
+    return best_so_far
 
 
 if __name__ == '__main__':
@@ -232,34 +225,15 @@ if __name__ == '__main__':
 
     for x in range(X_SIZE):
         for y in range(Y_SIZE):
-            states.append(State(x, y, False))
-            #if (x==PREMI_X and y == PREMI_Y):
-            #    states.append(State(x,y,True))
-            #else:
-            #    states.append(State(x, y, False))
+
+            if (x==PREMI_X and y == PREMI_Y):
+                states.append(State(x,y,FINAL_STATE))
+            else:
+                states.append(State(x, y, False))
 
 
     policy_random_example = get_random_policy(states) # is simply an list of strings...
 
-    print("What do you want to do?:")
-
-    option=input()
-
-    if option=="2":
-
-        V=[0.0]*NUM_STATES
-        Vt_before = [0.0]*NUM_STATES
-
-        for t in range(10000):
-            for i in range(X_SIZE):
-                for j in range(Y_SIZE):
-
-                    s = find_state(i,j,states)
-                    action = policy_random_example[i + j * Y_SIZE]
-
-                    if s.end==False:
-                        V[i + j*Y_SIZE]= s.get_chance_node(action=action).reward + GAMMA*sumatori(s,action,Vt_before)
-                        Vt_before[i + j * Y_SIZE]= V[i + j*Y_SIZE]
 
 
 
@@ -267,46 +241,72 @@ if __name__ == '__main__':
 
 
 
+
+
+
+
+
+
+
+
+    # POLICY EVALUATION
+    V=[0.0]*NUM_STATES
+    Vt_before = [0.0]*NUM_STATES
+
+    for t in range(10000):
         for i in range(X_SIZE):
             for j in range(Y_SIZE):
-                print(str(i) + " " + str(j) +": "+ str(V[i+j*Y_SIZE]))
-    """
-    elif option=="3":
-        
 
-        V_opt = [0.0]*NUM_STATES
-        Vt_opt_before = [0.0]*NUM_STATES
-        policy_optimum = [None]*NUM_STATES
+                s = find_state(i,j,states)
+                action = policy_random_example[i + j * Y_SIZE]
 
-        for t in range(10000):
-            for i in range(X_SIZE):
-                for j in range(Y_SIZE):
-                    if find_state(i, j, states).end == False:
+                if s.end==False:
+                    V[i + j*Y_SIZE]= s.get_chance_node(action=action).reward + GAMMA*sumatori(s,action,Vt_before) # this q_opt(s,pi(s))
+                    Vt_before[i + j * Y_SIZE]= V[i + j*Y_SIZE]
 
-                        sumatoris = []
-                        sumatoris.append([sumatori(states, i, j, "N", Vt_opt_before),"N"])
-                        sumatoris.append([sumatori(states, i, j, "S", Vt_opt_before),"S"])
-                        sumatoris.append([sumatori(states, i, j, "W", Vt_opt_before),"W"])
-                        sumatoris.append([sumatori(states, i, j, "E", Vt_opt_before),"E"])
 
-                        V_opt[i + j * Y_SIZE],policy_optimum[i + j * Y_SIZE] = get_max_and_best_action(sumatoris)
-                        Vt_opt_before[i + j * Y_SIZE] = V_opt[i + j * Y_SIZE]
+    for i in range(X_SIZE):
+        for j in range(Y_SIZE):
+            print(str(i) + " " + str(j) +": "+ str(V[i+j*Y_SIZE]))
 
-        #for i in range(X_SIZE):
-        #    for j in range(Y_SIZE):
-        #        print(str(i) + " " + str(j) + ": " + str(V_opt[i + j * Y_SIZE]))
 
+
+
+
+
+
+
+    # VALUE ITERATION
+    V_opt = [0.0] * NUM_STATES
+    Vt_opt_before = [0.0] * NUM_STATES
+    policy_optimum = [None] * NUM_STATES
+
+    for t in range(10000):
+        for i in range(X_SIZE):
+            for j in range(Y_SIZE):
+
+                s = find_state(i, j, states)
+                if s.end == False:
+
+                    q_otps = []
+                    q_otps.append([s.get_chance_node(action='N').reward + GAMMA * sumatori(s, 'N', Vt_before), 'N'])
+                    q_otps.append([s.get_chance_node(action='S').reward + GAMMA * sumatori(s, 'S', Vt_before), 'S'])
+                    q_otps.append([s.get_chance_node(action='W').reward + GAMMA * sumatori(s, 'W', Vt_before), 'W'])
+                    q_otps.append([s.get_chance_node(action='E').reward + GAMMA * sumatori(s, 'E', Vt_before), 'E'])
+
+                    V_opt[i + j * Y_SIZE], policy_optimum[i + j * Y_SIZE] = get_max_and_best_action(q_otps)
+                    Vt_opt_before[i + j * Y_SIZE] = V_opt[i + j * Y_SIZE]
+
+    print()
+    for y in range(Y_SIZE - 1, -1, -1):
+        for x in range(X_SIZE):
+
+            if policy_optimum[x + y * Y_SIZE] != None:
+                print(policy_optimum[x + y * Y_SIZE], end=" ")
+            else:
+                print(" ", end=" ")
         print()
-        for y in range(Y_SIZE-1, -1, -1):
-            for x in range(X_SIZE):
-
-                if policy_optimum[x+ y*Y_SIZE]!=None:
-                    print(policy_optimum[x+ y*Y_SIZE], end=" ")
-                else:
-                    print(" ",end = " ")
-            print()
-        print()
-    """
+    print()
 
 
 
@@ -316,11 +316,19 @@ if __name__ == '__main__':
 
 
 
-    # I després apendre probabilitats (RL) Nou repo???
 
 
-    # 04 14 24 34 44
-    # 03 13 ++ 33 43
-    # 02 12 22 32 42
-    # 01 11 21 31 41
-    # 00 10 20 30 40
+    # Suposant que no ens donen les probabilitats, com trobes V de una policy pi?: TD learning...  OR el que ja havia fet al primer REPO amb
+    # montecarlo simulation pero nomes es pot usar si hi ha final state, en canvi TD learning...
+
+    # After TD learning, Q learning...
+
+    N = [0] * NUM_STATES
+    G = [0.0] * NUM_STATES
+
+    initial_state = find_state(0,0,states)
+
+    for t in range(10000):
+        #sample episode:
+
+
