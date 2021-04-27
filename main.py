@@ -10,8 +10,8 @@ X_SIZE =5
 Y_SIZE =5
 NUM_STATES = X_SIZE * Y_SIZE
 GAMMA = 0.90
-PREMI_X, PREMI_Y = 2,2
-FINAL_STATE = False
+PREMI_X, PREMI_Y = 4,4
+FINAL_STATE = True
 
 class ChanceNode:
     def __init__(self, x,y,action,reward):
@@ -216,8 +216,35 @@ def get_max_and_best_action(q_opts):
         best_so_far=q_opts[2]
     if(q_opts[3][0]>best_so_far[0]):
         best_so_far=q_opts[3]
+
     return best_so_far
 
+def compute_reward_of_episode(states_episode,policy):
+
+    reward=0.0
+    number_of_steps=0
+
+    for i in range(len(states_episode)):
+        s= states_episode[i]
+        if s.end==False:
+            reward = reward + s.get_chance_node(policy[s.x + s.y * Y_SIZE]).reward * pow(GAMMA, number_of_steps)
+            number_of_steps = number_of_steps +1
+    return reward
+
+def list_contains(states, state): #returns true/false and an array of positions...
+
+    found= False
+    positions = []
+
+    counter =0
+    for s in states:
+        if s.x==state.x and s.y == state.y:
+            found= True
+            positions.append(counter)
+
+        counter = counter +1
+
+    return found,positions
 
 if __name__ == '__main__':
 
@@ -232,103 +259,128 @@ if __name__ == '__main__':
                 states.append(State(x, y, False))
 
 
-    policy_random_example = get_random_policy(states) # is simply an list of strings...
+    policy_random_example = get_random_policy(states) # is simply a list of strings...
+
+    print("What do you want to do?:")
+
+    option_selected = input()
+
+    if option_selected=="1":
+
+        # POLICY EVALUATION
+        V=[0.0]*NUM_STATES
+        Vt_before = [0.0]*NUM_STATES
+
+        for t in range(10000):
+            for i in range(X_SIZE):
+                for j in range(Y_SIZE):
+
+                    s = find_state(i,j,states)
+                    action = policy_random_example[i + j * Y_SIZE]
+
+                    if s.end==False:
+
+                        q_opt = s.get_chance_node(action=action).reward + GAMMA*sumatori(s,action,Vt_before)
+
+                        V[i + j*Y_SIZE]=  q_opt
+                        Vt_before[i + j * Y_SIZE]= V[i + j*Y_SIZE]
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # POLICY EVALUATION
-    V=[0.0]*NUM_STATES
-    Vt_before = [0.0]*NUM_STATES
-
-    for t in range(10000):
         for i in range(X_SIZE):
             for j in range(Y_SIZE):
+                print(str(i) + " " + str(j) +": "+ str(V[i+j*Y_SIZE]))
 
-                s = find_state(i,j,states)
-                action = policy_random_example[i + j * Y_SIZE]
+    if option_selected == "2":
 
-                if s.end==False:
-                    V[i + j*Y_SIZE]= s.get_chance_node(action=action).reward + GAMMA*sumatori(s,action,Vt_before) # this q_opt(s,pi(s))
-                    Vt_before[i + j * Y_SIZE]= V[i + j*Y_SIZE]
+        # VALUE ITERATION
+        V_opt = [0.0] * NUM_STATES
+        Vt_opt_before = [0.0] * NUM_STATES
+        policy_optimum = [None] * NUM_STATES
 
+        for t in range(10000):
+            for i in range(X_SIZE):
+                for j in range(Y_SIZE):
 
-    for i in range(X_SIZE):
-        for j in range(Y_SIZE):
-            print(str(i) + " " + str(j) +": "+ str(V[i+j*Y_SIZE]))
+                    s = find_state(i, j, states)
+                    if s.end == False:
 
+                        q_otps = []
+                        q_otps.append([s.get_chance_node(action='N').reward + GAMMA * sumatori(s, 'N', Vt_opt_before), 'N'])
+                        q_otps.append([s.get_chance_node(action='S').reward + GAMMA * sumatori(s, 'S', Vt_opt_before), 'S'])
+                        q_otps.append([s.get_chance_node(action='W').reward + GAMMA * sumatori(s, 'W', Vt_opt_before), 'W'])
+                        q_otps.append([s.get_chance_node(action='E').reward + GAMMA * sumatori(s, 'E', Vt_opt_before), 'E'])
 
+                        V_opt[i + j * Y_SIZE], policy_optimum[i + j * Y_SIZE] = get_max_and_best_action(q_otps)
+                        Vt_opt_before[i + j * Y_SIZE] = V_opt[i + j * Y_SIZE]
 
-
-
-
-
-
-    # VALUE ITERATION
-    V_opt = [0.0] * NUM_STATES
-    Vt_opt_before = [0.0] * NUM_STATES
-    policy_optimum = [None] * NUM_STATES
-
-    for t in range(10000):
-        for i in range(X_SIZE):
-            for j in range(Y_SIZE):
-
-                s = find_state(i, j, states)
-                if s.end == False:
-
-                    q_otps = []
-                    q_otps.append([s.get_chance_node(action='N').reward + GAMMA * sumatori(s, 'N', Vt_before), 'N'])
-                    q_otps.append([s.get_chance_node(action='S').reward + GAMMA * sumatori(s, 'S', Vt_before), 'S'])
-                    q_otps.append([s.get_chance_node(action='W').reward + GAMMA * sumatori(s, 'W', Vt_before), 'W'])
-                    q_otps.append([s.get_chance_node(action='E').reward + GAMMA * sumatori(s, 'E', Vt_before), 'E'])
-
-                    V_opt[i + j * Y_SIZE], policy_optimum[i + j * Y_SIZE] = get_max_and_best_action(q_otps)
-                    Vt_opt_before[i + j * Y_SIZE] = V_opt[i + j * Y_SIZE]
-
-    print()
-    for y in range(Y_SIZE - 1, -1, -1):
-        for x in range(X_SIZE):
-
-            if policy_optimum[x + y * Y_SIZE] != None:
-                print(policy_optimum[x + y * Y_SIZE], end=" ")
-            else:
-                print(" ", end=" ")
         print()
-    print()
+        for y in range(Y_SIZE - 1, -1, -1):
+            for x in range(X_SIZE):
+
+                if policy_optimum[x + y * Y_SIZE] != None:
+                    print(policy_optimum[x + y * Y_SIZE], end=" ")
+                else:
+                    print(" ", end=" ")
+            print()
+        print()
+
+    if option_selected == "1":
+
+        # Suposant que no ens donen les probabilitats, com trobes V de una policy pi?: TD learning...  OR el que ja havia fet al primer REPO amb
+        # montecarlo simulation pero nomes es pot usar si hi ha final state, en canvi TD learning...
+
+        # Osigui model free es com RL ja no...? CLAU...
+
+        # After TD learning, Q learning...
+
+        N = [0] * NUM_STATES
+        G = [0.0] * NUM_STATES
+        V_monte_carlo = [0.0] * NUM_STATES
+
+        initial_state = find_state(0,0,states)
+
+        for loop in range(100000):
+
+            if(loop%(100000/10)==0):
+                print("|")
+
+            states_episode = []
+            states_episode.append(initial_state)
+            number_of_states = 1
+
+            while (states_episode[number_of_states-1].end==False):
+
+                actual_state = states_episode[number_of_states-1]
+                next_state = actual_state.next_state(policy_random_example[actual_state.x + actual_state.y * Y_SIZE],states)
+
+                states_episode.append(next_state)
+                number_of_states = number_of_states +1
+                #print(str(actual_state.x)+ " " + str(actual_state.y))
+
+
+            G_t = [] # sera tant llarga com states_episode
+
+            for t in range(number_of_states):
+                reward_from_t = compute_reward_of_episode(states_episode[t::],policy_random_example)
+                G_t.append(reward_from_t)
+
+            for x in range(X_SIZE):
+                for y in range(Y_SIZE):
+                    state = find_state(x,y,states)
+                    cont,pos = list_contains(states_episode, state) #returns true/false and an array of positions...
+                    if cont==True:
+                        N[x + y*Y_SIZE] = N[x + y*Y_SIZE] +1
+                        G[x + y*Y_SIZE] = G[x + y*Y_SIZE] +G_t[pos[0]]
+                        V_monte_carlo[x + y*Y_SIZE] = G[x + y*Y_SIZE] / N[x + y*Y_SIZE]
+
+        for i in range(X_SIZE):
+            for j in range(Y_SIZE):
+                print(str(i) + " " + str(j) + ": " + str(V_monte_carlo[i + j * Y_SIZE]))
 
 
 
+    # potser podria usar threads per usar diferents CPU's...
+    # locures de mes endavant -> imagina que les transition probabilities cambiessin through time... que en el fons es el que
+    # passa al autoscaling problem...
 
-
-
-
-
-
-
-
-    # Suposant que no ens donen les probabilitats, com trobes V de una policy pi?: TD learning...  OR el que ja havia fet al primer REPO amb
-    # montecarlo simulation pero nomes es pot usar si hi ha final state, en canvi TD learning...
-
-    # After TD learning, Q learning...
-
-    N = [0] * NUM_STATES
-    G = [0.0] * NUM_STATES
-
-    initial_state = find_state(0,0,states)
-
-    for t in range(10000):
-        #sample episode:
-
-
+    # l'ultim montecarlo esta bé perque aconsegueix estimator of V que es unbiased!! tot i que es veu que la variance es bastant gran...
