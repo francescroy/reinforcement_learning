@@ -5,13 +5,14 @@
 
 import numpy as np
 from random import *
+import math
 
-X_SIZE =9
-Y_SIZE =9
+X_SIZE =5
+Y_SIZE =5
 NUM_STATES = X_SIZE * Y_SIZE
 GAMMA = 0.90
-PREMI_X, PREMI_Y = 4,4
-FINAL_STATE = False
+PREMI_X, PREMI_Y = 2,2
+FINAL_STATE = True # Can be false if using TD-learning or Policy evaluation...
 COST_STEP = 0.10
 
 class ChanceNode:
@@ -194,7 +195,10 @@ def get_random_policy(states):
 
             if(find_state(x,y,states).end==False):
 
-                policy.append("N")
+                if y>math.floor(Y_SIZE/2.0):
+                    policy.append("S")
+                else:
+                    policy.append("N")
 
             else:
                 policy.append(None)
@@ -341,12 +345,11 @@ if __name__ == '__main__':
 
     if option_selected == "1":
 
-        # Suposant que no ens donen les probabilitats, com trobes V de una policy pi?: TD learning...  OR el que ja havia fet al primer REPO amb
-        # montecarlo simulation pero nomes es pot usar si hi ha final state, en canvi TD learning...
-
-        # Osigui model free es com RL ja no...? CLAU...
-
-        # After TD learning, Q learning...
+        ############################################
+        ############################################
+        ##### SHOULD EXIST AND END STATE ###########
+        ############################################
+        ############################################
 
         N = [0] * NUM_STATES
         G = [0.0] * NUM_STATES
@@ -394,8 +397,16 @@ if __name__ == '__main__':
 
 
 
+
+    # Suposant que no ens donen les probabilitats, com trobes V de una policy pi?: TD learning...  OR el que ja havia fet al primer REPO amb
+    # montecarlo simulation pero nomes es pot usar si hi ha final state, en canvi TD learning...
+
+    # Osigui model free es com RL ja no...? CLAU...
+
+    # After TD learning, Q learning...
+
     # potser podria usar threads per usar diferents CPU's...
-    # locures de mes endavant -> imagina que les transition probabilities cambiessin through time... que en el fons es el que
+    # es endavant -> imagina que les transition probabilities cambiessin through time... que en el fons es el que
     # passa al autoscaling problem...
 
     # l'ultim montecarlo esta bé perque aconsegueix estimator of V que es unbiased!! tot i que es veu que la variance es bastant gran...
