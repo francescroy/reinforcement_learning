@@ -12,6 +12,7 @@ NUM_STATES = X_SIZE * Y_SIZE
 GAMMA = 0.90
 PREMI_X, PREMI_Y = 4,4
 FINAL_STATE = False
+COST_STEP = 0.10
 
 class ChanceNode:
     def __init__(self, x,y,action,reward):
@@ -178,11 +179,11 @@ def compute_reward(x,y,action):
 
     if (0 <= desired_x and desired_x <= X_SIZE - 1 and 0 <= desired_y and desired_y <= Y_SIZE - 1):
         if action!='·':
-            return (compute_cost(x,y) - compute_cost(desired_x,desired_y)) - 0.05
+            return (compute_cost(x,y) - compute_cost(desired_x,desired_y)) - COST_STEP
         else:
             return 0.0
     else:
-        return - 0.05
+        return -COST_STEP
 
 def get_random_policy(states):
 
@@ -271,14 +272,6 @@ if __name__ == '__main__':
     policy_random_example = get_random_policy(states) # is simply a list of strings...
 
     print("What do you want to do?:")
-
-    print(find_state(4, 4, states).get_chance_node("·").reward)
-    print(find_state(4, 4, states).get_chance_node("N").reward)
-    print(find_state(4, 4, states).get_chance_node("S").reward)
-    print(find_state(4, 4, states).get_chance_node("W").reward)
-    print(find_state(4, 4, states).get_chance_node("E").reward)
-
-    print(find_state(4, 5, states).get_chance_node("S").reward)
 
     option_selected = input()
 
