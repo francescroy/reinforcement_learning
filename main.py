@@ -6,17 +6,18 @@
 import numpy as np
 from random import *
 import math
+import sys
 
-X_SIZE =7
-Y_SIZE =7
+X_SIZE =5
+Y_SIZE =5
 NUM_STATES = X_SIZE * Y_SIZE
 GAMMA = 0.90
-OPTIMAL_X, OPTIMAL_Y = 3,3
-OPTIMAL_FINAL_STATE = False
-# Can be false if using TD-learning or Policy evaluation but must be true if some MonteCarlo method...
+OPTIMAL_X, OPTIMAL_Y = 2,2
+OPTIMAL_FINAL_STATE = True # Can be false if using TD-learning or DP Policy evaluation but must be true if some MonteCarlo method for policy evaluation...
 COST_STEP = 0.10
 
-EVERY_VISIT_MONTECARLO = False
+INCREMENTAL_MONTECARLO = True
+EVERY_VISIT_MONTECARLO = True # If INCREMENTAL_MONTECARLO is True then it doesn't matter...
 
 
 class ChanceNode:
@@ -317,8 +318,9 @@ if __name__ == '__main__':
 
         for t in range(10000):
 
-            if t%(10000/10)==0:
-                print("|")
+            if (t%(10000/10)==0 and t!=0):
+                print("|", end=' ')
+                sys.stdout.flush()
 
             for i in range(X_SIZE):
                 for j in range(Y_SIZE):
@@ -363,8 +365,9 @@ if __name__ == '__main__':
 
         for loop in range(100000):
 
-            if(loop%(100000/10)==0):
-                print("|")
+            if(loop%(100000/10)==0 and loop!=0):
+                print("|" , end = ' ')
+                sys.stdout.flush()
 
             states_episode = []
             states_episode.append(initial_state)
@@ -386,21 +389,28 @@ if __name__ == '__main__':
                 reward_from_t = compute_reward_of_episode(states_episode[t::],policy_random_example)
                 G_t.append(reward_from_t)
 
-            for x in range(X_SIZE):
-                for y in range(Y_SIZE):
-                    state = find_state(x,y,states)
-                    cont,pos = list_contains(states_episode, state) #returns true/false and an array of positions...
-                    if cont==True:
-                        if EVERY_VISIT_MONTECARLO==False:
-                            N[x + y*Y_SIZE] = N[x + y*Y_SIZE] +1
-                            G[x + y*Y_SIZE] = G[x + y*Y_SIZE] +G_t[pos[0]]
-                            V_monte_carlo[x + y*Y_SIZE] = G[x + y*Y_SIZE] / N[x + y*Y_SIZE]
-                        else:
-                            for p in pos:
-                                N[x + y * Y_SIZE] = N[x + y * Y_SIZE] + 1
-                                G[x + y * Y_SIZE] = G[x + y * Y_SIZE] + G_t[pos[0]]
-                                V_monte_carlo[x + y * Y_SIZE] = G[x + y * Y_SIZE] / N[x + y * Y_SIZE]
+            if INCREMENTAL_MONTECARLO == False:
 
+                for x in range(X_SIZE):
+                    for y in range(Y_SIZE):
+                        state = find_state(x,y,states)
+                        cont,pos = list_contains(states_episode, state) #returns true/false and an array of positions...
+                        if cont==True:
+                            if EVERY_VISIT_MONTECARLO==False:
+                                N[x + y*Y_SIZE] = N[x + y*Y_SIZE] +1
+                                G[x + y*Y_SIZE] = G[x + y*Y_SIZE] +G_t[pos[0]]
+                                V_monte_carlo[x + y*Y_SIZE] = G[x + y*Y_SIZE] / N[x + y*Y_SIZE]
+                            else:
+                                for p in pos:
+                                    N[x + y * Y_SIZE] = N[x + y * Y_SIZE] + 1
+                                    G[x + y * Y_SIZE] = G[x + y * Y_SIZE] + G_t[p]
+                                    V_monte_carlo[x + y * Y_SIZE] = G[x + y * Y_SIZE] / N[x + y * Y_SIZE]
+            else:
+                for t in range(number_of_states):
+                    state = states_episode[t]
+                    N[state.x + state.y * Y_SIZE] = N[state.x + state.y * Y_SIZE] + 1
+                    ALPHA = 1/N[state.x + state.y * Y_SIZE] # Equal to EVERY_VISIT_MONTECARLO...
+                    V_monte_carlo[state.x + state.y * Y_SIZE] = V_monte_carlo[state.x + state.y * Y_SIZE] + ALPHA*(G_t[t] - V_monte_carlo[state.x + state.y * Y_SIZE])
 
 
         for i in range(X_SIZE):
@@ -410,17 +420,19 @@ if __name__ == '__main__':
 
 
 
-    # Suposant que no ens donen les probabilitats, com trobes V de una policy pi?: TD learning...  OR el que ja havia fet al primer REPO amb
-    # montecarlo simulation pero nomes es pot usar si hi ha final state, en canvi TD learning...
-
-    # Osigui model free es com RL ja no...? CLAU...
+    # Suposant que no ens donen les probabilitats, com trobes V de una policy pi?: TD learning... Osigui model free es com RL ja no...? CLAU...
 
     # After TD learning, Q learning...
 
     # potser podria usar threads per usar diferents CPU's...
-    # es endavant -> imagina que les transition probabilities cambiessin through time... que en el fons es el que
-    # passa al autoscaling problem...
+    # es endavant -> imagina que les transition probabilities cambiessin through time... que en el fons es el que passa al autoscaling problem...
 
     # l'ultim montecarlo esta bé perque aconsegueix estimator of V que es unbiased!! tot i que es veu que la variance es bastant gran...
 
-    # It would be nice to undestand why value iteration works and also policy evaluation... is because you are using dynamic programming...
+
+
+
+
+    ## THEROY ##
+    # It would be nice to undestand why DP policy evaluation algo. works... is because you are using bootstrapping...
+    # It's much easier to understand MC policy evaluation algo. works... it relies on sampling, no on bootstrapping...
