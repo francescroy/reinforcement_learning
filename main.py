@@ -7,13 +7,17 @@ import numpy as np
 from random import *
 import math
 
-X_SIZE =5
-Y_SIZE =5
+X_SIZE =7
+Y_SIZE =7
 NUM_STATES = X_SIZE * Y_SIZE
 GAMMA = 0.90
-PREMI_X, PREMI_Y = 2,2
-FINAL_STATE = True # Can be false if using TD-learning or Policy evaluation...
+OPTIMAL_X, OPTIMAL_Y = 3,3
+OPTIMAL_FINAL_STATE = False
+# Can be false if using TD-learning or Policy evaluation but must be true if some MonteCarlo method...
 COST_STEP = 0.10
+
+EVERY_VISIT_MONTECARLO = False
+
 
 class ChanceNode:
     def __init__(self, x,y,action,reward):
@@ -158,7 +162,7 @@ def find_state(x,y,states):
     return result
 
 def compute_cost(x,y):
-    return (pow(x - PREMI_X, 2) + pow(y - PREMI_Y, 2))
+    return (pow(x - OPTIMAL_X, 2) + pow(y - OPTIMAL_Y, 2))
 
 def compute_reward(x,y,action):
 
@@ -267,8 +271,8 @@ if __name__ == '__main__':
     for x in range(X_SIZE):
         for y in range(Y_SIZE):
 
-            if (x==PREMI_X and y == PREMI_Y):
-                states.append(State(x,y,FINAL_STATE))
+            if (x==OPTIMAL_X and y == OPTIMAL_Y):
+                states.append(State(x,y,OPTIMAL_FINAL_STATE))
             else:
                 states.append(State(x, y, False))
 
@@ -387,9 +391,17 @@ if __name__ == '__main__':
                     state = find_state(x,y,states)
                     cont,pos = list_contains(states_episode, state) #returns true/false and an array of positions...
                     if cont==True:
-                        N[x + y*Y_SIZE] = N[x + y*Y_SIZE] +1
-                        G[x + y*Y_SIZE] = G[x + y*Y_SIZE] +G_t[pos[0]]
-                        V_monte_carlo[x + y*Y_SIZE] = G[x + y*Y_SIZE] / N[x + y*Y_SIZE]
+                        if EVERY_VISIT_MONTECARLO==False:
+                            N[x + y*Y_SIZE] = N[x + y*Y_SIZE] +1
+                            G[x + y*Y_SIZE] = G[x + y*Y_SIZE] +G_t[pos[0]]
+                            V_monte_carlo[x + y*Y_SIZE] = G[x + y*Y_SIZE] / N[x + y*Y_SIZE]
+                        else:
+                            for p in pos:
+                                N[x + y * Y_SIZE] = N[x + y * Y_SIZE] + 1
+                                G[x + y * Y_SIZE] = G[x + y * Y_SIZE] + G_t[pos[0]]
+                                V_monte_carlo[x + y * Y_SIZE] = G[x + y * Y_SIZE] / N[x + y * Y_SIZE]
+
+
 
         for i in range(X_SIZE):
             for j in range(Y_SIZE):
@@ -410,3 +422,5 @@ if __name__ == '__main__':
     # passa al autoscaling problem...
 
     # l'ultim montecarlo esta bé perque aconsegueix estimator of V que es unbiased!! tot i que es veu que la variance es bastant gran...
+
+    # It would be nice to undestand why value iteration works and also policy evaluation... is because you are using dynamic programming...
