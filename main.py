@@ -277,7 +277,6 @@ if __name__ == '__main__':
             else:
                 states.append(State(x, y, False))
 
-
     policy_random_example = get_random_policy(states) # is simply a list of strings...
 
     print("What do you want to do?:")
@@ -363,7 +362,7 @@ if __name__ == '__main__':
 
         initial_state = find_state(0,0,states)
 
-        for loop in range(100000):
+        for loop in range(100000): # Each loop is an episode.
 
             if(loop%(100000/10)==0 and loop!=0):
                 print("|" , end = ' ')
@@ -417,6 +416,29 @@ if __name__ == '__main__':
             for j in range(Y_SIZE):
                 print(str(i) + " " + str(j) + ": " + str(V_monte_carlo[i + j * Y_SIZE]))
 
+    if option_selected == "3":
+        # Let's develop TD learning!
+        V = [0.0] * NUM_STATES
+        Vt_before = [0.0] * NUM_STATES
+
+        for t in range(10000):
+            for i in range(X_SIZE): # Crec que aixo fora
+                for j in range(Y_SIZE): # Crec que aixo fora
+
+                    s = find_state(i, j, states)
+                    action = policy_random_example[i + j * Y_SIZE]
+
+                    if s.end == False:
+                        q_opt = s.get_chance_node(action=action).reward + GAMMA * sumatori(s, action, Vt_before)
+
+                        V[i + j * Y_SIZE] = q_opt
+                        Vt_before[i + j * Y_SIZE] = V[i + j * Y_SIZE]
+
+
+
+
+
+
 
 
 
@@ -435,4 +457,4 @@ if __name__ == '__main__':
 
     ## THEROY ##
     # It would be nice to undestand why DP policy evaluation algo. works... is because you are using bootstrapping...
-    # It's much easier to understand MC policy evaluation algo. works... it relies on sampling, no on bootstrapping...
+    # It's much easier to understand MC policy evaluation algo. works... it relies on sampling, not on bootstrapping...
