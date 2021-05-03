@@ -13,7 +13,7 @@ Y_SIZE =5
 NUM_STATES = X_SIZE * Y_SIZE
 GAMMA = 0.90
 OPTIMAL_X, OPTIMAL_Y = 2,2
-OPTIMAL_FINAL_STATE = True # Can be false if using TD-learning or DP Policy evaluation but must be true if some MonteCarlo method for policy evaluation...
+OPTIMAL_FINAL_STATE = False # Can be false if using TD-learning or DP methods but must be true if some MonteCarlo method for policy evaluation...
 COST_STEP = 0.10
 
 INCREMENTAL_MONTECARLO = True
@@ -200,6 +200,21 @@ def get_random_policy(states):
 
             if(find_state(x,y,states).end==False):
 
+                """
+                rand_dir = randint(0, 4)
+                if rand_dir==0:
+                    policy.append('N')
+                if rand_dir==1:
+                    policy.append('S')
+                if rand_dir==2:
+                    policy.append('W')
+                if rand_dir==3:
+                    policy.append('E')
+                if rand_dir==4:
+                    policy.append('·')
+                
+                """
+
                 if y>math.floor(Y_SIZE/2.0):
                     policy.append("S")
                 else:
@@ -261,7 +276,10 @@ def get_max_and_best_action(q_opts):
 
     return best_so_far
 
-
+def print_V(V):
+    for i in range(X_SIZE):
+        for j in range(Y_SIZE):
+            print(str(i) + " " + str(j) + ": " + str(V[i + j * Y_SIZE]))
 
 
 
@@ -281,6 +299,8 @@ if __name__ == '__main__':
 
     print("What do you want to do?:")
 
+    V_to_compare = []
+
     option_selected = input()
 
     if option_selected == "1":
@@ -289,7 +309,9 @@ if __name__ == '__main__':
         V=[0.0]*NUM_STATES
         Vt_before = [0.0]*NUM_STATES
 
-        for t in range(10000):
+        number_of_iterations = 10000
+
+        for t in range(number_of_iterations):
             for i in range(X_SIZE):
                 for j in range(Y_SIZE):
 
@@ -303,10 +325,8 @@ if __name__ == '__main__':
                         V[i + j*Y_SIZE]=  q_opt
                         Vt_before[i + j * Y_SIZE]= V[i + j*Y_SIZE]
 
-
-        for i in range(X_SIZE):
-            for j in range(Y_SIZE):
-                print(str(i) + " " + str(j) +": "+ str(V[i+j*Y_SIZE]))
+        print_V(V)
+        V_to_compare = V
 
     if option_selected == "2":
 
@@ -315,9 +335,11 @@ if __name__ == '__main__':
         Vt_opt_before = [0.0] * NUM_STATES
         policy_optimum = [None] * NUM_STATES
 
-        for t in range(10000):
+        number_of_iterations= 10000
 
-            if (t%(10000/10)==0 and t!=0):
+        for t in range(number_of_iterations):
+
+            if (t%(number_of_iterations/10)==0 and t!=0):
                 print("|", end=' ')
                 sys.stdout.flush()
 
@@ -348,7 +370,7 @@ if __name__ == '__main__':
             print()
         print()
 
-    if option_selected == "1":
+    if option_selected == "3":
 
         ############################################
         ############################################
@@ -362,9 +384,11 @@ if __name__ == '__main__':
 
         initial_state = find_state(0,0,states)
 
-        for loop in range(100000): # Each loop is an episode.
+        number_of_iterations=  100000
 
-            if(loop%(100000/10)==0 and loop!=0):
+        for loop in range(number_of_iterations): # Each loop is an episode.
+
+            if(loop%(number_of_iterations/10)==0 and loop!=0):
                 print("|" , end = ' ')
                 sys.stdout.flush()
 
@@ -374,12 +398,12 @@ if __name__ == '__main__':
 
             while (states_episode[number_of_states-1].end==False):
 
-                actual_state = states_episode[number_of_states-1]
-                next_state = actual_state.next_state(policy_random_example[actual_state.x + actual_state.y * Y_SIZE],states)
+                current_state = states_episode[number_of_states-1]
+                next_state = current_state.next_state(policy_random_example[current_state.x + current_state.y * Y_SIZE],states)
 
                 states_episode.append(next_state)
                 number_of_states = number_of_states +1
-                #print(str(actual_state.x)+ " " + str(actual_state.y))
+                #print(str(current_state.x)+ " " + str(current_state.y))
 
 
             G_t = [] # sera tant llarga com states_episode
@@ -411,32 +435,52 @@ if __name__ == '__main__':
                     ALPHA = 1/N[state.x + state.y * Y_SIZE] # Equal to EVERY_VISIT_MONTECARLO...
                     V_monte_carlo[state.x + state.y * Y_SIZE] = V_monte_carlo[state.x + state.y * Y_SIZE] + ALPHA*(G_t[t] - V_monte_carlo[state.x + state.y * Y_SIZE])
 
+        print_V(V_monte_carlo)
 
-        for i in range(X_SIZE):
-            for j in range(Y_SIZE):
-                print(str(i) + " " + str(j) + ": " + str(V_monte_carlo[i + j * Y_SIZE]))
-
-    if option_selected == "3":
+    if option_selected == "1":
         # Let's develop TD learning!
+
+        number_of_iterations = 10000000
         V = [0.0] * NUM_STATES
-        Vt_before = [0.0] * NUM_STATES
+        ALPHA = 0.001  # Which is the right value? After 50% of iteration decay... after 80% decay...
 
-        for t in range(10000):
-            for i in range(X_SIZE): # Crec que aixo fora
-                for j in range(Y_SIZE): # Crec que aixo fora
+        for t in range(number_of_iterations):
 
-                    s = find_state(i, j, states)
-                    action = policy_random_example[i + j * Y_SIZE]
+            if (t % (number_of_iterations / 10) == 0 and t != 0):
+                print("|", end=' ')
+                sys.stdout.flush()
 
-                    if s.end == False:
-                        q_opt = s.get_chance_node(action=action).reward + GAMMA * sumatori(s, action, Vt_before)
+            current_state = find_state(randint(0, X_SIZE - 1), randint(0, Y_SIZE - 1), states)
+            action = policy_random_example[current_state.x + current_state.y * Y_SIZE]
+            reward = current_state.get_chance_node(action).reward
+            next_state = current_state.next_state(action,states)
 
-                        V[i + j * Y_SIZE] = q_opt
-                        Vt_before[i + j * Y_SIZE] = V[i + j * Y_SIZE]
+            V_current = V[current_state.x + current_state.y * Y_SIZE]
+            V_next = V[next_state.x + next_state.y * Y_SIZE]
+
+            if t== number_of_iterations/2:
+                ALPHA= ALPHA/10
+
+            V[current_state.x + current_state.y * Y_SIZE] = V_current + ALPHA * ((reward+GAMMA*V_next)-V_current)
 
 
 
+        #print_V(V)
+        print(sum(list(abs(np.array(V_to_compare) - np.array(V)))))
 
+    if option_selected == "4":
+        # Let's develop Policy iteration!
+        # todo
+
+
+        print()
+
+    if option_selected == "5":
+        # Montecarlo method to find best policy
+        # todo
+
+
+        print()
 
 
 
@@ -458,3 +502,4 @@ if __name__ == '__main__':
     ## THEROY ##
     # It would be nice to undestand why DP policy evaluation algo. works... is because you are using bootstrapping...
     # It's much easier to understand MC policy evaluation algo. works... it relies on sampling, not on bootstrapping...
+
