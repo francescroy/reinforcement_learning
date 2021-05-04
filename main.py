@@ -440,7 +440,7 @@ if __name__ == '__main__':
     if option_selected == "1":
         # Let's develop TD learning!
 
-        number_of_iterations = 10000000
+        number_of_iterations = 20000000
         V = [0.0] * NUM_STATES
         ALPHA = 0.001  # Which is the right value? After 50% of iteration decay... after 80% decay...
 
@@ -460,6 +460,8 @@ if __name__ == '__main__':
 
             if t== number_of_iterations/2:
                 ALPHA= ALPHA/10
+            if t== (number_of_iterations/2 + number_of_iterations/4):
+                ALPHA= ALPHA/2
 
             V[current_state.x + current_state.y * Y_SIZE] = V_current + ALPHA * ((reward+GAMMA*V_next)-V_current)
 
