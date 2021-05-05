@@ -8,11 +8,11 @@ from random import *
 import math
 import sys
 
-X_SIZE =5
-Y_SIZE =5
+X_SIZE =9
+Y_SIZE =9
 NUM_STATES = X_SIZE * Y_SIZE
 GAMMA = 0.90
-OPTIMAL_X, OPTIMAL_Y = 2,2
+OPTIMAL_X, OPTIMAL_Y = 4,4
 OPTIMAL_FINAL_STATE = False # Can be false if using TD-learning or DP methods but must be true if some MonteCarlo method for policy evaluation...
 COST_STEP = 0.10
 
