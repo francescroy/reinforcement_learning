@@ -8,11 +8,11 @@ from random import *
 import math
 import sys
 
-X_SIZE =9
-Y_SIZE =9
+X_SIZE =5
+Y_SIZE =5
 NUM_STATES = X_SIZE * Y_SIZE
 GAMMA = 0.90
-OPTIMAL_X, OPTIMAL_Y = 4,4
+OPTIMAL_X, OPTIMAL_Y = 2,2
 OPTIMAL_FINAL_STATE = False # Can be false if using TD-learning or DP methods but must be true if some MonteCarlo method for policy evaluation...
 COST_STEP = 0.10
 
@@ -320,9 +320,9 @@ if __name__ == '__main__':
 
                     if s.end==False:
 
-                        q_opt = s.get_chance_node(action=action).reward + GAMMA*sumatori(s,action,Vt_before)
+                        q_pi = [s.get_chance_node(action=action).reward + GAMMA*sumatori(s,action,Vt_before),action]
 
-                        V[i + j*Y_SIZE]=  q_opt
+                        V[i + j*Y_SIZE]=  q_pi[0]
                         Vt_before[i + j * Y_SIZE]= V[i + j*Y_SIZE]
 
         print_V(V)
@@ -349,14 +349,16 @@ if __name__ == '__main__':
                     s = find_state(i, j, states)
                     if s.end == False:
 
-                        q_otps = []
-                        q_otps.append([s.get_chance_node(action='N').reward + GAMMA * sumatori(s, 'N', Vt_opt_before), 'N'])
-                        q_otps.append([s.get_chance_node(action='S').reward + GAMMA * sumatori(s, 'S', Vt_opt_before), 'S'])
-                        q_otps.append([s.get_chance_node(action='W').reward + GAMMA * sumatori(s, 'W', Vt_opt_before), 'W'])
-                        q_otps.append([s.get_chance_node(action='E').reward + GAMMA * sumatori(s, 'E', Vt_opt_before), 'E'])
-                        q_otps.append([s.get_chance_node(action='·').reward + GAMMA * sumatori(s, '·', Vt_opt_before), '·'])
+                        q_pis = []
+                        q_pis.append([s.get_chance_node(action='N').reward + GAMMA * sumatori(s, 'N', Vt_opt_before), 'N'])
+                        q_pis.append([s.get_chance_node(action='S').reward + GAMMA * sumatori(s, 'S', Vt_opt_before), 'S'])
+                        q_pis.append([s.get_chance_node(action='W').reward + GAMMA * sumatori(s, 'W', Vt_opt_before), 'W'])
+                        q_pis.append([s.get_chance_node(action='E').reward + GAMMA * sumatori(s, 'E', Vt_opt_before), 'E'])
+                        q_pis.append([s.get_chance_node(action='·').reward + GAMMA * sumatori(s, '·', Vt_opt_before), '·'])
 
-                        V_opt[i + j * Y_SIZE], policy_optimum[i + j * Y_SIZE] = get_max_and_best_action(q_otps)
+                        q_opt = get_max_and_best_action(q_pis)
+
+                        V_opt[i + j * Y_SIZE], policy_optimum[i + j * Y_SIZE] = q_opt
                         Vt_opt_before[i + j * Y_SIZE] = V_opt[i + j * Y_SIZE]
 
         print()
