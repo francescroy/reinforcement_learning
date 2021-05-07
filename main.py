@@ -358,6 +358,10 @@ def get_num_action(action):
     if(action=='·'):
         return 4
 
+
+
+
+
 if __name__ == '__main__':
 
     states = []
@@ -599,7 +603,7 @@ if __name__ == '__main__':
 
 
 
-    ## THEROY ##
+    ## THEORY ##
     # It would be nice to undestand why DP policy evaluation algo. works... is because you are using bootstrapping...
     # It's much easier to understand MC policy evaluation algo. works... it relies on sampling, not on bootstrapping...
 
