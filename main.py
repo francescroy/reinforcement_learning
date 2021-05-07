@@ -8,15 +8,16 @@ from random import *
 import math
 import sys
 
-X_SIZE =5
-Y_SIZE =5
+X_SIZE =7 # 5,7,9
+Y_SIZE =7 # 5,7,9
 NUM_STATES = X_SIZE * Y_SIZE
 GAMMA = 0.90
-OPTIMAL_X, OPTIMAL_Y = 2,2
-OPTIMAL_FINAL_STATE = False # Can be false if using TD-learning or DP methods but must be true if some MonteCarlo method for policy evaluation...
+OPTIMAL_X, OPTIMAL_Y = 3,3 # 2,3,4
+OPTIMAL_FINAL_STATE = True # Can be false if using TD-learning or DP methods but must be true if some MonteCarlo method...
 COST_STEP = 0.10
+NUM_ACTIONS = 5
 
-INCREMENTAL_MONTECARLO = True
+INCREMENTAL_MONTECARLO = False
 EVERY_VISIT_MONTECARLO = True # If INCREMENTAL_MONTECARLO is True then it doesn't matter...
 
 
@@ -191,6 +192,35 @@ def compute_reward(x,y,action):
     else:
         return -COST_STEP
 
+def get_nice_policy(states):
+    policy = [None]*NUM_STATES
+
+    for x in range(0,int((X_SIZE/2))):
+        for y in range(Y_SIZE):
+            policy[x + y*Y_SIZE] = 'S'
+
+    for x in range(X_SIZE):
+        for y in range(0,int((Y_SIZE/2))):
+            policy[x + y * Y_SIZE] = 'E'
+
+    for x in range(int((X_SIZE/2))+1,X_SIZE):
+        for y in range(Y_SIZE):
+            policy[x + y*Y_SIZE] = 'N'
+
+    for x in range(int((X_SIZE/2)),X_SIZE):
+        for y in range(int((Y_SIZE/2)+1),Y_SIZE):
+            policy[x + y * Y_SIZE] = 'W'
+
+    for x in range(X_SIZE):
+        for y in range(Y_SIZE):
+            if policy[x + y * Y_SIZE] == None:
+                if states[x + y * Y_SIZE].end==False:
+                    policy[x + y * Y_SIZE] = '·'
+
+
+
+    return policy
+
 def get_random_policy(states):
 
     policy= []
@@ -200,7 +230,7 @@ def get_random_policy(states):
 
             if(find_state(x,y,states).end==False):
 
-                """
+
                 rand_dir = randint(0, 4)
                 if rand_dir==0:
                     policy.append('N')
@@ -213,12 +243,8 @@ def get_random_policy(states):
                 if rand_dir==4:
                     policy.append('·')
                 
-                """
 
-                if y>math.floor(Y_SIZE/2.0):
-                    policy.append("S")
-                else:
-                    policy.append("N")
+
 
             else:
                 policy.append(None)
@@ -281,7 +307,56 @@ def print_V(V):
         for j in range(Y_SIZE):
             print(str(i) + " " + str(j) + ": " + str(V[i + j * Y_SIZE]))
 
+def print_policy(policy):
+    print()
+    for y in range(Y_SIZE - 1, -1, -1):
+        for x in range(X_SIZE):
 
+            if policy[x + y * Y_SIZE] != None:
+                print(policy[x + y * Y_SIZE], end=" ")
+            else:
+                print(" ", end=" ")
+        print()
+    print()
+
+def get_random_state(states):
+    random_state = find_state(randint(0, X_SIZE - 1), randint(0, Y_SIZE - 1), states)
+    while random_state.end == True:
+        random_state = find_state(randint(0, X_SIZE - 1), randint(0, Y_SIZE - 1), states)
+    return random_state
+
+def generate_episode(initial_state,policy):
+
+    states_episode = []
+
+    states_episode.append(initial_state)
+    number_of_states = 1
+
+    while (states_episode[number_of_states - 1].end == False):
+        current_state = states_episode[number_of_states - 1]
+        next_state = current_state.next_state(policy[current_state.x + current_state.y * Y_SIZE], states)
+
+        states_episode.append(next_state)
+        number_of_states = number_of_states + 1
+
+    return states_episode,number_of_states
+
+def print_wait_info(loop,number_of_iterations):
+    if (loop % (number_of_iterations / 10) == 0 and loop != 0):
+        print("|", end=' ')
+        sys.stdout.flush()
+
+def get_num_action(action):
+    if(action=='N'):
+        return 0
+    if(action=='S'):
+        return 1
+    if(action=='W'):
+        return 2
+    if(action=='E'):
+        return 3
+    if(action=='·'):
+        return 4
 
 if __name__ == '__main__':
 
@@ -295,7 +370,10 @@ if __name__ == '__main__':
             else:
                 states.append(State(x, y, False))
 
-    policy_random_example = get_random_policy(states) # is simply a list of strings...
+
+    policy_example = get_nice_policy(states) # is simply a list of strings...
+
+    print_policy(policy_example)
 
     print("What do you want to do?:")
 
@@ -303,6 +381,10 @@ if __name__ == '__main__':
 
     option_selected = input()
 
+
+
+
+    # MODEL-BASED MDP ALGO: POLICY EVALUATION
     if option_selected == "1":
 
         # POLICY EVALUATION
@@ -316,7 +398,7 @@ if __name__ == '__main__':
                 for j in range(Y_SIZE):
 
                     s = find_state(i,j,states)
-                    action = policy_random_example[i + j * Y_SIZE]
+                    action = policy_example[i + j * Y_SIZE]
 
                     if s.end==False:
 
@@ -328,6 +410,7 @@ if __name__ == '__main__':
         print_V(V)
         V_to_compare = V
 
+    # MODEL-BASED MDP ALGO: VALUE ITERATION
     if option_selected == "2":
 
         # VALUE ITERATION
@@ -361,18 +444,10 @@ if __name__ == '__main__':
                         V_opt[i + j * Y_SIZE], policy_optimum[i + j * Y_SIZE] = q_opt
                         Vt_opt_before[i + j * Y_SIZE] = V_opt[i + j * Y_SIZE]
 
-        print()
-        for y in range(Y_SIZE - 1, -1, -1):
-            for x in range(X_SIZE):
+        print_policy(policy_optimum)
 
-                if policy_optimum[x + y * Y_SIZE] != None:
-                    print(policy_optimum[x + y * Y_SIZE], end=" ")
-                else:
-                    print(" ", end=" ")
-            print()
-        print()
-
-    if option_selected == "3":
+    # MODEL-FREE MDP ALGO: MC POLICY EVALUATION
+    if option_selected == "1":
 
         ############################################
         ############################################
@@ -384,38 +459,20 @@ if __name__ == '__main__':
         G = [0.0] * NUM_STATES
         V_monte_carlo = [0.0] * NUM_STATES
 
-        initial_state = find_state(0,0,states)
-
-        number_of_iterations=  100000
+        number_of_iterations = 1000000
 
         for loop in range(number_of_iterations): # Each loop is an episode.
 
-            if(loop%(number_of_iterations/10)==0 and loop!=0):
-                print("|" , end = ' ')
-                sys.stdout.flush()
+            print_wait_info(loop,number_of_iterations)
 
-            states_episode = []
-            states_episode.append(initial_state)
-            number_of_states = 1
-
-            while (states_episode[number_of_states-1].end==False):
-
-                current_state = states_episode[number_of_states-1]
-                next_state = current_state.next_state(policy_random_example[current_state.x + current_state.y * Y_SIZE],states)
-
-                states_episode.append(next_state)
-                number_of_states = number_of_states +1
-                #print(str(current_state.x)+ " " + str(current_state.y))
-
+            states_episode,number_of_states = generate_episode(get_random_state(states),policy_example)
 
             G_t = [] # sera tant llarga com states_episode
-
             for t in range(number_of_states):
-                reward_from_t = compute_reward_of_episode(states_episode[t::],policy_random_example)
+                reward_from_t = compute_reward_of_episode(states_episode[t::],policy_example)
                 G_t.append(reward_from_t)
 
             if INCREMENTAL_MONTECARLO == False:
-
                 for x in range(X_SIZE):
                     for y in range(Y_SIZE):
                         state = find_state(x,y,states)
@@ -438,22 +495,26 @@ if __name__ == '__main__':
                     V_monte_carlo[state.x + state.y * Y_SIZE] = V_monte_carlo[state.x + state.y * Y_SIZE] + ALPHA*(G_t[t] - V_monte_carlo[state.x + state.y * Y_SIZE])
 
         print_V(V_monte_carlo)
+        print(sum(list(abs(np.array(V_to_compare) - np.array(V_monte_carlo)))))
 
-    if option_selected == "1":
-        # Let's develop TD learning!
+    # MODEL-FREE MDP ALGO: TD LEARNING
+    if option_selected == "3":
+        # Let's develop TD learning! El problema es que has de tenir una policy que es mogui per toooots els estats
+        # Clar perque fer un rand(),rand() a current_state per anar saltant d'estats es com fer trampa...
 
-        number_of_iterations = 20000000
+        # La gracia d'aquest respecte l'anterior és que pot tractar MDP's sense end state, i si fas tants moviments com al montecarlo
+        # aconseguiras una precisió molt semblant...
+
+        number_of_iterations = 10000000
         V = [0.0] * NUM_STATES
         ALPHA = 0.001  # Which is the right value? After 50% of iteration decay... after 80% decay...
+        current_state = find_state(0,0, states)
 
-        for t in range(number_of_iterations):
+        for t in range(number_of_iterations): # Each t is a movement (s, a, r, s)
 
-            if (t % (number_of_iterations / 10) == 0 and t != 0):
-                print("|", end=' ')
-                sys.stdout.flush()
+            print_wait_info(t,number_of_iterations)
 
-            current_state = find_state(randint(0, X_SIZE - 1), randint(0, Y_SIZE - 1), states)
-            action = policy_random_example[current_state.x + current_state.y * Y_SIZE]
+            action = policy_example[current_state.x + current_state.y * Y_SIZE]
             reward = current_state.get_chance_node(action).reward
             next_state = current_state.next_state(action,states)
 
@@ -467,24 +528,59 @@ if __name__ == '__main__':
 
             V[current_state.x + current_state.y * Y_SIZE] = V_current + ALPHA * ((reward+GAMMA*V_next)-V_current)
 
+            if next_state.end == False:
+                current_state = next_state
+            else:
+                current_state = get_random_state(states)
 
 
-        #print_V(V)
+        print_V(V)
         print(sum(list(abs(np.array(V_to_compare) - np.array(V)))))
 
+    # MODEL-FREE MDP ALGO: MC CONTROL
     if option_selected == "4":
-        # Let's develop Policy iteration!
-        # todo
 
+        ############################################
+        ############################################
+        ##### SHOULD EXIST AND END STATE ###########
+        ############################################
+        ############################################
 
-        print()
+        policy_actual = policy_example
 
-    if option_selected == "5":
-        # Montecarlo method to find best policy
-        # todo
+        N = [[0] * NUM_STATES]*NUM_ACTIONS
+        G = [[0.0] * NUM_STATES]*NUM_ACTIONS
+        Q = [[0.0] * NUM_STATES]*NUM_ACTIONS
 
+        number_of_iterations=  1000000
 
-        print()
+        for loop in range(number_of_iterations): # Each loop is an episode.
+
+            print_wait_info(loop,number_of_iterations)
+
+            states_episode,number_of_states = generate_episode(get_random_state(states),policy_actual)
+
+            G_t = [] # sera tant llarga com states_episode
+            for t in range(number_of_states):
+                reward_from_t = compute_reward_of_episode(states_episode[t::],policy_actual)
+                G_t.append(reward_from_t)
+
+            for x in range(X_SIZE):
+                for y in range(Y_SIZE):
+                    state = find_state(x, y, states)
+                    num_action = get_num_action(policy_actual[state.x + state.y * Y_SIZE])
+                    cont, pos = list_contains(states_episode, state)  # returns true/false and an array of positions...
+                    if cont == True:
+                        if EVERY_VISIT_MONTECARLO == False:
+                            N[num_action][x + y * Y_SIZE] = N[num_action][x + y * Y_SIZE] + 1
+                            G[num_action][x + y * Y_SIZE] = G[num_action][x + y * Y_SIZE] + G_t[pos[0]]
+                            Q[num_action][x + y * Y_SIZE] = G[num_action][x + y * Y_SIZE] / N[num_action][x + y * Y_SIZE]
+                        else:
+                            for p in pos:
+                                N[num_action][x + y * Y_SIZE] = N[num_action][x + y * Y_SIZE] + 1
+                                G[num_action][x + y * Y_SIZE] = G[num_action][x + y * Y_SIZE] + G_t[p]
+                                Q[num_action][x + y * Y_SIZE] = G[num_action][x + y * Y_SIZE] / N[num_action][x + y * Y_SIZE]
+
 
 
 
