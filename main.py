@@ -8,19 +8,17 @@ from random import *
 import math
 import sys
 
-X_SIZE =5 # 5,7,9
-Y_SIZE =5 # 5,7,9
+X_SIZE =9 # 5,7,9
+Y_SIZE =9 # 5,7,9
 NUM_STATES = X_SIZE * Y_SIZE
 GAMMA = 0.90
-OPTIMAL_X, OPTIMAL_Y = 2,2 # 2,3,4
+OPTIMAL_X, OPTIMAL_Y = 4,4 # 2,3,4
 OPTIMAL_FINAL_STATE = False # Can be false if using TD-learning or DP methods but must be true if some MonteCarlo method...
 COST_STEP = 0.10
 NUM_ACTIONS = 5
 
 INCREMENTAL_MONTECARLO = False
 EVERY_VISIT_MONTECARLO = False # If INCREMENTAL_MONTECARLO is True then it doesn't matter...
-
-EPSILON = 0.05
 
 class ChanceNode:
     def __init__(self, x,y,action,reward):
@@ -168,15 +166,16 @@ def compute_reward(x,y,action):
     elif action == '·':
         pass
 
-    ## Here
+    reward = 0.0
 
     if (0 <= desired_x and desired_x <= X_SIZE - 1 and 0 <= desired_y and desired_y <= Y_SIZE - 1):
         if action!='·':
-            return (compute_cost(x,y) - compute_cost(desired_x,desired_y)) - COST_STEP
-        else:
-            return 0.0
+            reward =  (compute_cost(x,y) - compute_cost(desired_x,desired_y)) - COST_STEP
     else:
-        return -COST_STEP
+        reward = -COST_STEP
+
+
+    return reward
 
 def get_nice_policy(states):
     policy = [None]*NUM_STATES
@@ -374,10 +373,32 @@ def argmax_a(Q,state):
 
     if Q[4][state.x + state.y * Y_SIZE] > best_q:
         best_action = get_action(4)
+        best_q = Q[4][state.x + state.y * Y_SIZE]
 
     return best_action
 
+def max_a(Q,state):
 
+    best_action = get_action(0)
+    best_q = Q[0][state.x + state.y * Y_SIZE]
+
+    if Q[1][state.x + state.y * Y_SIZE] > best_q:
+        best_action = get_action(1)
+        best_q = Q[1][state.x + state.y * Y_SIZE]
+
+    if Q[2][state.x + state.y * Y_SIZE] > best_q:
+        best_action = get_action(2)
+        best_q = Q[2][state.x + state.y * Y_SIZE]
+
+    if Q[3][state.x + state.y * Y_SIZE] > best_q:
+        best_action = get_action(3)
+        best_q = Q[3][state.x + state.y * Y_SIZE]
+
+    if Q[4][state.x + state.y * Y_SIZE] > best_q:
+        best_action = get_action(4)
+        best_q = Q[4][state.x + state.y * Y_SIZE]
+
+    return best_q
 
 
 
@@ -543,7 +564,7 @@ def main():
             V_current = V[current_state.x + current_state.y * Y_SIZE]
             V_next = V[next_state.x + next_state.y * Y_SIZE]
 
-            if t%(number_of_iterations/4)== 0 and t!=0:
+            if t%(number_of_iterations/10)== 0 and t!=0:
                 ALPHA= ALPHA/2
 
             V[current_state.x + current_state.y * Y_SIZE] = V_current + ALPHA * ((reward+GAMMA*V_next)-V_current)
@@ -565,6 +586,8 @@ def main():
         ##### SHOULD EXIST AN END STATE ############
         ############################################
         ############################################
+
+        EPSILON = 0.05
 
         policy_actual = policy_example
         policy_improved = [None] * NUM_STATES
@@ -634,18 +657,42 @@ def main():
     if option_selected == "5":
 
         policy_actual = policy_example
-        policy_improved = [None] * NUM_STATES
 
-        initial_state = get_random_state(states)
-        t=0
+        ALPHA = 0.001  # Which is the right value? After 50% of iteration decay... after 80% decay... LEARNING RATE...
+        current_state = get_random_state(states)
         Q = []
-
         for i in range(NUM_ACTIONS):
-
             Q.append([0.0] * NUM_STATES)
 
-        number_of_iterations = 10000
-        for i in range(number_of_iterations):
+        EPSILON = 1.00
+        number_of_iterations = 100000000
+        DECAYING_EPSILON = 1.0/number_of_iterations
+
+        for t in range(number_of_iterations):
+
+            print_wait_info(t, number_of_iterations)
+
+            action = policy_actual[current_state.x + current_state.y * Y_SIZE]
+            reward = current_state.get_chance_node(action).reward
+            next_state = current_state.next_state(action, states)
+
+            Q_t_minus_1 = Q[get_num_action(action)][current_state.x + current_state.y * Y_SIZE]
+
+            if t%(number_of_iterations/10)== 0 and t!=0:
+                ALPHA= ALPHA/2
+
+            Q[get_num_action(action)][current_state.x + current_state.y *Y_SIZE] = Q_t_minus_1 + ALPHA * (reward + GAMMA * max_a(Q, next_state) - Q_t_minus_1)
+
+            policy_actual[current_state.x + current_state.y * Y_SIZE] = argmax_a(Q, current_state)
+            random_int = randint(0, 99)
+            if random_int < int(EPSILON * 100):
+                policy_actual[current_state.x + current_state.y * Y_SIZE] = get_action(randint(0, 4))
+
+            EPSILON= EPSILON - DECAYING_EPSILON
+
+            current_state = next_state
+
+        print_policy(policy_actual)
 
 
 
