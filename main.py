@@ -8,11 +8,11 @@ from random import *
 import math
 import sys
 
-X_SIZE =5 # 5,7,9
-Y_SIZE =5 # 5,7,9
+X_SIZE =7 # 5,7,9
+Y_SIZE =7 # 5,7,9
 NUM_STATES = X_SIZE * Y_SIZE
 GAMMA = 0.90
-OPTIMAL_X, OPTIMAL_Y = 2,2 # 2,3,4
+OPTIMAL_X, OPTIMAL_Y = 3,3 # 2,3,4
 OPTIMAL_FINAL_STATE = False # Can be false if using TD-learning or DP methods but must be true if some MonteCarlo method...
 COST_STEP = 0.10
 NUM_ACTIONS = 5
@@ -416,7 +416,8 @@ def main():
                 states.append(State(x, y, False))
 
 
-    policy_example = get_nice_policy(states) # is simply a list of strings...
+    # policy_example = get_nice_policy(states) # is simply a list of strings...
+    policy_example = get_random_policy(states)  # is simply a list of strings...
 
     print_policy(policy_example)
 
@@ -665,7 +666,7 @@ def main():
             Q.append([0.0] * NUM_STATES)
 
         EPSILON = 1.00
-        number_of_iterations = 1000000 
+        number_of_iterations = 10000000        
         DECAYING_EPSILON = 1.0/number_of_iterations
 
         for t in range(number_of_iterations):
