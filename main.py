@@ -588,7 +588,9 @@ def main():
         ############################################
         ############################################
 
-        EPSILON = 0.05
+        EPSILON = 1.00
+        number_of_improvements = 10000000
+        DECAYING_EPSILON = 1.0 / number_of_improvements
 
         policy_actual = policy_example
         policy_improved = [None] * NUM_STATES
@@ -604,13 +606,13 @@ def main():
             G.append([0.0] * NUM_STATES)
             Q.append([0.0] * NUM_STATES)
 
-        number_of_iterations = 10000
+        number_of_episodes = 1000
 
-        for number_of_improvements in range(100000):
+        for improv in range(number_of_improvements):
 
-            for loop in range(number_of_iterations): # Each loop is an episode.
+            for episode in range(number_of_episodes):
 
-                print_wait_info(loop,number_of_iterations)
+                print_wait_info(episode,number_of_episodes)
                 states_episode,number_of_states = generate_episode(get_random_state(states),policy_actual,states)
 
                 G_t = [] # sera tant llarga com states_episode
@@ -650,8 +652,10 @@ def main():
                         if random_int<int(EPSILON*100):
                             policy_improved[x + y * Y_SIZE] = get_action(randint(0, 4))
 
+
+            EPSILON = EPSILON - DECAYING_EPSILON
             print_policy(policy_improved)
-            print(number_of_improvements)
+            print(improv)
             policy_actual=policy_improved
 
     # MODEL-FREE MDP ALGO: Q-LEARNING, FIND [ESTIMATED] OPTIMAL POLICY
