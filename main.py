@@ -8,11 +8,11 @@ from random import *
 import math
 import sys
 
-X_SIZE =7 # 5,7,9
-Y_SIZE =7 # 5,7,9
+X_SIZE =9 # 5,7,9
+Y_SIZE =9 # 5,7,9
 NUM_STATES = X_SIZE * Y_SIZE
 GAMMA = 0.90
-OPTIMAL_X, OPTIMAL_Y = 3,3 # 2,3,4
+OPTIMAL_X, OPTIMAL_Y = 4,4 # 2,3,4
 OPTIMAL_FINAL_STATE = False # Can be false if using TD-learning or DP methods but must be true if some MonteCarlo method...
 COST_STEP = 0.10
 NUM_ACTIONS = 5
@@ -21,39 +21,38 @@ INCREMENTAL_MONTECARLO = False
 EVERY_VISIT_MONTECARLO = False # If INCREMENTAL_MONTECARLO is True then it doesn't matter...
 
 class ChanceNode:
-    def __init__(self, x,y,action,reward):
+    def __init__(self, x,y,action):
         self.action = action
         self.x = x
         self.y = y
         self.trans_probabilities = np.zeros((NUM_STATES,), dtype=float)
-        self.reward = reward
 
         if action=='N':
 
-            self.set_trans_probability(x, y + 1, 0.7)
-            self.set_trans_probability(x + 1, y, 0.15)
-            self.set_trans_probability(x - 1, y, 0.15)
-        elif action=='S':
-
-            self.set_trans_probability(x, y - 1, 0.7)
-            self.set_trans_probability(x + 1, y, 0.15)
-            self.set_trans_probability(x - 1, y, 0.15)
-        elif action=='W':
-
-            self.set_trans_probability(x - 1, y, 0.7)
-            self.set_trans_probability(x, y + 1, 0.15)
-            self.set_trans_probability(x, y - 1, 0.15)
-        elif action=='E':
-
-            self.set_trans_probability(x + 1, y, 0.7)
-            self.set_trans_probability(x, y + 1, 0.15)
-            self.set_trans_probability(x, y - 1, 0.15)
-        elif action=='·':
-            self.set_trans_probability(x ,y, 0.8)
-            self.set_trans_probability(x, y + 1, 0.05)
-            self.set_trans_probability(x, y - 1, 0.05)
+            self.set_trans_probability(x, y + 1, 0.9)
             self.set_trans_probability(x + 1, y, 0.05)
             self.set_trans_probability(x - 1, y, 0.05)
+        elif action=='S':
+
+            self.set_trans_probability(x, y - 1, 0.9)
+            self.set_trans_probability(x + 1, y, 0.05)
+            self.set_trans_probability(x - 1, y, 0.05)
+        elif action=='W':
+
+            self.set_trans_probability(x - 1, y, 0.9)
+            self.set_trans_probability(x, y + 1, 0.05)
+            self.set_trans_probability(x, y - 1, 0.05)
+        elif action=='E':
+
+            self.set_trans_probability(x + 1, y, 0.9)
+            self.set_trans_probability(x, y + 1, 0.05)
+            self.set_trans_probability(x, y - 1, 0.05)
+        elif action=='·':
+            self.set_trans_probability(x ,y, 0.96)
+            self.set_trans_probability(x, y + 1, 0.01)
+            self.set_trans_probability(x, y - 1, 0.01)
+            self.set_trans_probability(x + 1, y, 0.01)
+            self.set_trans_probability(x - 1, y, 0.01)
 
     def set_trans_probability(self,x,y,prob):
 
@@ -105,12 +104,12 @@ class State:
         self.chance_nodes = None
 
         if end==False:
-            self.chance_nodes = [ChanceNode(x,y,'N',compute_reward(x,y,'N')),ChanceNode(x,y,'S',compute_reward(x,y,'S')),ChanceNode(x,y,'W',compute_reward(x,y,'W')),ChanceNode(x,y,'E',compute_reward(x,y,'E')),ChanceNode(x,y,'·',compute_reward(x,y,'·'))]
+            self.chance_nodes = [ChanceNode(x,y,'N'),ChanceNode(x,y,'S'),ChanceNode(x,y,'W'),ChanceNode(x,y,'E'),ChanceNode(x,y,'·')]
 
     def next_state(self, action, states):
 
         if self.end==True:
-            return self # o None?
+            return self # o None...
         if action=='N':
             return self.chance_nodes[0].next_state(states)
         if action=='S':
@@ -147,35 +146,12 @@ def find_state(x,y,states):
 
     return result
 
-def compute_cost(x,y):
-    return (pow(x - OPTIMAL_X, 2) + pow(y - OPTIMAL_Y, 2))
-
 def compute_reward(x,y,action):
 
-    desired_x =x
-    desired_y =y
-
-    if action=='N':
-        desired_y = desired_y + 1
-    elif action=='S':
-        desired_y = desired_y - 1
-    elif action == 'W':
-        desired_x = desired_x - 1
-    elif action == 'E':
-        desired_x = desired_x + 1
-    elif action == '·':
-        pass
-
-    reward = 0.0
-
-    if (0 <= desired_x and desired_x <= X_SIZE - 1 and 0 <= desired_y and desired_y <= Y_SIZE - 1):
-        if action!='·':
-            reward =  (compute_cost(x,y) - compute_cost(desired_x,desired_y)) - COST_STEP
+    if action!="·":
+        return -(pow(x - OPTIMAL_X, 2) + pow(y - OPTIMAL_Y, 2)) - COST_STEP
     else:
-        reward = -COST_STEP
-
-
-    return reward
+        return -(pow(x - OPTIMAL_X, 2) + pow(y - OPTIMAL_Y, 2))
 
 def get_nice_policy(states):
     policy = [None]*NUM_STATES
@@ -235,6 +211,10 @@ def get_random_policy(states):
                 policy.append(None)
 
     return policy
+
+def get_random_policy_fixed(states):
+
+    return ['E', '·', '·', 'N', '·', '·', '·', 'E', '·', 'W', 'S', 'N', 'W', 'S', '·', 'S', 'E', 'N', 'N', 'S', 'S', 'W', 'W', 'W', 'W', 'E', '·', 'E', 'N', '·', 'N', 'W', '·', 'S', 'W', 'N', '·', 'N', '·', 'W', 'S', 'E', 'W', 'S', '·', 'N', 'N', 'E', 'N', 'S', '·', 'N', '·', '·', 'E', 'S', 'N', 'E', '·', '·', 'S', 'E', 'N', 'W', '·', 'S', '·', 'W', 'W', 'E', 'E', 'S', '·', 'N', 'W', 'E', 'E', 'E', 'N', 'N', 'E']
 
 def list_contains(states, state): #returns true/false and an array of positions...
 
@@ -400,7 +380,28 @@ def max_a(Q,state):
 
     return best_q
 
+def compute_expected_reward(states,policy):
+    # POLICY EVALUATION
+    V = [0.0] * NUM_STATES
+    Vt_before = [0.0] * NUM_STATES
 
+    number_of_iterations = 10000
+
+    for t in range(number_of_iterations):
+        for i in range(X_SIZE):
+            for j in range(Y_SIZE):
+
+                s = find_state(i, j, states)
+                action = policy[i + j * Y_SIZE]
+
+                if s.end == False:
+                    V[i + j * Y_SIZE] = compute_reward(s.x, s.y, action) + GAMMA * sumatori(s, action, Vt_before, states)
+                    Vt_before[i + j * Y_SIZE] = V[i + j * Y_SIZE]
+
+    return V
+
+def average_policy_value(lst):
+    return sum(lst) / len(lst)
 
 
 def main():
@@ -416,8 +417,9 @@ def main():
                 states.append(State(x, y, False))
 
 
-    # policy_example = get_nice_policy(states) # is simply a list of strings...
-    policy_example = get_random_policy(states)  # is simply a list of strings...
+    #policy_example = get_nice_policy(states) # is simply a list of strings...
+    #policy_example = get_random_policy(states)  # is simply a list of strings...
+    policy_example = get_random_policy_fixed(states)
 
     print_policy(policy_example)
 
@@ -433,24 +435,7 @@ def main():
     # MODEL-BASED MDP ALGO: POLICY EVALUATION, GIVEN A POLICY, WHAT IS THE EXPECTED REWARD?
     if option_selected == "1":
 
-        # POLICY EVALUATION
-        V=[0.0]*NUM_STATES
-        Vt_before = [0.0]*NUM_STATES
-
-        number_of_iterations = 10000
-
-        for t in range(number_of_iterations):
-            for i in range(X_SIZE):
-                for j in range(Y_SIZE):
-
-                    s = find_state(i,j,states)
-                    action = policy_example[i + j * Y_SIZE]
-
-                    if s.end==False:
-
-                        V[i + j*Y_SIZE]=  s.get_chance_node(action=action).reward + GAMMA*sumatori(s,action,Vt_before,states)
-                        Vt_before[i + j * Y_SIZE]= V[i + j*Y_SIZE]
-
+        V = compute_expected_reward(states,policy_example)
         print_V(V)
         V_to_compare = V
 
@@ -462,7 +447,7 @@ def main():
         Vt_opt_before = [0.0] * NUM_STATES
         policy_optimum = [None] * NUM_STATES
 
-        number_of_iterations= 10000
+        number_of_iterations= 30000
 
         for t in range(number_of_iterations):
 
@@ -477,17 +462,19 @@ def main():
                     if s.end == False:
 
                         possible_Vs = []
-                        possible_Vs.append([s.get_chance_node(action='N').reward + GAMMA * sumatori(s, 'N', Vt_opt_before,states), 'N'])
-                        possible_Vs.append([s.get_chance_node(action='S').reward + GAMMA * sumatori(s, 'S', Vt_opt_before,states), 'S'])
-                        possible_Vs.append([s.get_chance_node(action='W').reward + GAMMA * sumatori(s, 'W', Vt_opt_before,states), 'W'])
-                        possible_Vs.append([s.get_chance_node(action='E').reward + GAMMA * sumatori(s, 'E', Vt_opt_before,states), 'E'])
-                        possible_Vs.append([s.get_chance_node(action='·').reward + GAMMA * sumatori(s, '·', Vt_opt_before,states), '·'])
+                        possible_Vs.append([compute_reward(s.x,s.y,"N") + GAMMA * sumatori(s, 'N', Vt_opt_before,states), 'N'])
+                        possible_Vs.append([compute_reward(s.x,s.y,"S") + GAMMA * sumatori(s, 'S', Vt_opt_before,states), 'S'])
+                        possible_Vs.append([compute_reward(s.x,s.y,"W") + GAMMA * sumatori(s, 'W', Vt_opt_before,states), 'W'])
+                        possible_Vs.append([compute_reward(s.x,s.y,"E") + GAMMA * sumatori(s, 'E', Vt_opt_before,states), 'E'])
+                        possible_Vs.append([compute_reward(s.x,s.y,"·") + GAMMA * sumatori(s, '·', Vt_opt_before,states), '·'])
 
                         V_opt[i + j * Y_SIZE], policy_optimum[i + j * Y_SIZE] = get_max_and_best_action(possible_Vs)
                         Vt_opt_before[i + j * Y_SIZE] = V_opt[i + j * Y_SIZE]
 
         print_policy(policy_optimum)
+        print(average_policy_value(compute_expected_reward(states, policy_optimum)))
 
+    """
     # MODEL-FREE MDP ALGO: MC POLICY EVALUATION, GIVEN A POLICY, WHAT IS THE [ESTIMATED] EXPECTED REWARD?
     if option_selected == "3":
 
@@ -540,6 +527,7 @@ def main():
 
         print_V(V_monte_carlo)
         print(sum(list(abs(np.array(V_to_compare) - np.array(V_monte_carlo)))))
+    """
 
     # MODEL-FREE MDP ALGO: TD LEARNING, GIVEN A POLICY, WHAT IS THE [ESTIMATED] EXPECTED REWARD?
     if option_selected == "1":
@@ -549,9 +537,9 @@ def main():
         # La gracia d'aquest respecte l'anterior és que pot tractar MDP's sense end state, i si fas tants moviments com al montecarlo
         # aconseguiras una precisió molt semblant...
 
-        number_of_iterations = 10000000
+        number_of_iterations = 30000000
         V = [0.0] * NUM_STATES
-        ALPHA = 0.001  # Which is the right value? After 50% of iteration decay... after 80% decay... LEARNING RATE...
+        ALPHA = 0.01  # Which is the right value? After 50% of iteration decay... after 80% decay... LEARNING RATE...
         current_state = get_random_state(states)
 
         for t in range(number_of_iterations): # Each t is a movement (s, a, r, s)
@@ -559,19 +547,20 @@ def main():
             print_wait_info(t,number_of_iterations)
 
             action = policy_example[current_state.x + current_state.y * Y_SIZE]
-            reward = current_state.get_chance_node(action).reward
+            reward = compute_reward(current_state.x,current_state.y,action)
             next_state = current_state.next_state(action,states)
 
             V_current = V[current_state.x + current_state.y * Y_SIZE]
             V_next = V[next_state.x + next_state.y * Y_SIZE]
 
-            if t%(number_of_iterations/10)== 0 and t!=0:
-                ALPHA= ALPHA/2
+            #if t%(number_of_iterations/10)== 0 and t!=0:
+                #ALPHA= ALPHA/2
 
             V[current_state.x + current_state.y * Y_SIZE] = V_current + ALPHA * ((reward+GAMMA*V_next)-V_current)
 
             if next_state.end == False:
-                current_state = next_state
+                #current_state = next_state
+                current_state = get_random_state(states)
             else:
                 current_state = get_random_state(states)
 
@@ -579,8 +568,9 @@ def main():
         print_V(V)
         print(sum(list(abs(np.array(V_to_compare) - np.array(V)))))
 
+    """
     # MODEL-FREE MDP ALGO: MC CONTROL, FIND [ESTIMATED] OPTIMAL POLICY
-    if option_selected == "4":
+    if option_selected == "5":
 
         ############################################
         ############################################
@@ -657,9 +647,10 @@ def main():
             print_policy(policy_improved)
             print(improv)
             policy_actual=policy_improved
+    """
 
     # MODEL-FREE MDP ALGO: Q-LEARNING, FIND [ESTIMATED] OPTIMAL POLICY
-    if option_selected == "5":
+    if option_selected == "6":
 
         policy_actual = policy_example
 
@@ -670,21 +661,24 @@ def main():
             Q.append([0.0] * NUM_STATES)
 
         EPSILON = 1.00
-        number_of_iterations = 10000000        
+        number_of_iterations = 16000000
         DECAYING_EPSILON = 1.0/number_of_iterations
+
+        print(number_of_iterations)
+        print(ALPHA)
 
         for t in range(number_of_iterations):
 
             print_wait_info(t, number_of_iterations)
 
             action = policy_actual[current_state.x + current_state.y * Y_SIZE]
-            reward = current_state.get_chance_node(action).reward
+            reward = compute_reward(x=current_state.x,y=current_state.y,action=action)
             next_state = current_state.next_state(action, states)
 
             Q_t_minus_1 = Q[get_num_action(action)][current_state.x + current_state.y * Y_SIZE]
 
-            if t%(number_of_iterations/10)== 0 and t!=0:
-                ALPHA= ALPHA/2
+            #if t%(number_of_iterations/10)== 0 and t!=0:
+            #    ALPHA= ALPHA/2
 
             Q[get_num_action(action)][current_state.x + current_state.y *Y_SIZE] = Q_t_minus_1 + ALPHA * (reward + GAMMA * max_a(Q, next_state) - Q_t_minus_1)
 
@@ -697,7 +691,9 @@ def main():
 
             current_state = next_state
 
+
         print_policy(policy_actual)
+        print(average_policy_value(compute_expected_reward(states, policy_actual)))
 
 
 
